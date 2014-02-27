@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" initial="start">
+    <state id="start" locked="yes" initial="yes">
+        <transition event="ready" target="RunRobot"/>
+    </state>   
+    <state id="RunRobot">
+        <transition event="exit" target="CleanUp"/>
+    </state>    
+    <state id="CleanUp" locked="yes" final="yes"/>
+</scxml>
+
+<!-- locked, to follow open-close principle. Open for extension close for modification -->
+
+
+

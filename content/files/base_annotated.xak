@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scxml xmlns:sc="http://www.w3.org/2005/07/scxml" xmlns:xak="http://www.onekin.org/xak" xmlns="http://www.w3.org/2005/07/scxml" version="1.0" xak:feature="base" xak:type="xml">
+   <state xak:module="start" id="start" initial="yes">
+      <transition event="ready" target="RunRobot" xak:module="start-ready-RunRobot"/>
+   </state>
+   <state xak:module="RunRobot" id="RunRobot">
+      <transition event="exit" target="CleanUp" xak:module="RunRobot-exit-CleanUp"/>
+   </state>
+   <state xak:module="CleanUp" id="CleanUp" final="yes"/>
+</scxml>
