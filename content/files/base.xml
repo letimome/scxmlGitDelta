@@ -1,15 +1,36 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" initial="start">
-    <state id="start" locked="yes" initial="yes">
-        <transition event="ready" target="RunRobot"/>
-    </state>   
+ <?xml version="1.0" encoding="UTF-8"?>
+ <scxml version="1.0" xmlns="http://www.w3.org/2005/07/scxml" xmlns:sc="http://www.w3.org/2005/07/scxml">
+    <state id="start" initial="yes">
+       <transition event="ready" target="RunRobot"/>
+    </state>
     <state id="RunRobot">
-        <transition event="exit" target="CleanUp"/>
-    </state>    
-    <state id="CleanUp" locked="yes" final="yes"/>
-</scxml>
-
-<!-- locked, to follow open-close principle. Open for extension close for modification -->
-
-
-
+              <transition event="exit" target="CleanUp"/>
+           <paralell id="obstacleAndDrive">
+          <state id="obstacleAvoidance" initial="AvoidWait">
+             <state id="AvoidWait" initial="yes">
+                <transition event="oFront" target="AvoidFront"/>
+                <transition event="oLeft" target="AvoidLeft"/>
+                <transition target="AvoidRight"/>
+             </state>
+             <state id="AvoidFront">
+                <transition target="AvoidWait"/>
+             </state>
+             <state id="AvoidLeft">
+                <transition target="AvoidWait"/>
+             </state>
+             <state id="AvoidRight">
+                <transition target="AvoidWait"/>
+             </state>
+          </state>
+          <state id="DriveRobot" initial="DriveWait">
+             <state id="DriveWait" initial="yes">
+                <transition event="clear" target="Drive"/>
+             </state>
+             <state id="Drive">
+                <transition event="wait" target="DriveWait"/>
+             </state>
+          </state>
+       </paralell>
+    </state>
+    <state final="yes" id="CleanUp"/>
+ </scxml>

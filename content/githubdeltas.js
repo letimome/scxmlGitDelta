@@ -2286,17 +2286,19 @@ if(user!=null&&token!=null&&repo!=null&&button3!=null){
  var button4=GitHub.getBranchFilter();
 //console.log("Form branch:"+button4);//.submit
 if(user!=null&&token!=null&&repo!=null&&button4!=null){
-  var branchFilter=new BranchFilterEController();
-  GitHub.listenToBranchFilter("keypress",function(ev){
+  //var branchFilter=new BranchFilterEController();
+  var branching= new BranchEController();
+  GitHub.listenToBranchFilter("keydown",function(ev){
+  	//console.log(ev.keyCode);
   	if(ev.keyCode==13){
   		ev.preventDefault();
   		ev.stopPropagation();  
-  		branchFilter.execute(ev,GitHub.getParentBranch(),ev.currentTarget.value);
+  		console.log("KEYPRESS for "+ev.currentTarget.value);
+  		branching.execute(ev,ev.currentTarget.value);
+  		//branchFilter.execute(ev,GitHub.getParentBranch(),ev.currentTarget.value);
   	}
   });
  }
-
-//console.log("END LOAD") ;
 
 }; 
 
@@ -2310,34 +2312,51 @@ var BranchEController=function(){
 };
 
 BranchEController.prototype.execute=function(ev, newb){
-	//https://github.com/lemome88/SimpleRobot/branches?authenticity_token=Bp9OCHqst7Ww9sQj913AqYDBSvzkqlNpvJY57HF3vQs%3D&branch=master&name=hhhghghghghghg&path=
-	//Location= https://github.com/lemome88/SimpleRobot/tree/hhhghghghghghg
-	//post parametros: authenticity_token, branch (currentBrancg), name(new branch name), path?
 
 	console.log("New Branch ...");	
 	//console.log(ev.currentTarget.innerHTML);
 	//console.log(ev.currentTarget.firstElementChild.textContent);
 	var user=GitHub.getUserName(); 
 	var repo=GitHub.getCurrentRepository(); 
-	     var par=GitHub.getParentBranch();
+	var par=GitHub.getParentBranch();
+		var nBranch;
+		if(ev.currentTarget.value){//evento por keydown
+			nBranch=newb;
+		}
+		else{//evento por mouseclick
+			var createBranch=newb.split(': ');
+			nBranch=createBranch[1];
+		} 
 		console.log("parent: "+par);
-		var createBranch=newb.split(': ');
-		nBranch=createBranch[1];
 		console.log("new one: "+nBranch);
 		var token=GitHub.getAuthenticityToken();
-		console.log("auth: "+token);
-		
-		Utils.XHR("/"+user+"/"+repo+"/branches",function(res){
-			token2=GitHub.getAuthenticityToken();
-			Utils.XHR("/"+user+"/"+repo+"/edit/"+nBranch+"/"+DeltaUtils.ResultXMLName,function(res){//https://github.com/letimome/miRepo/edit/nuevo/resultado.xml   
-				var commit = jQuery(res).find("input[name='commit']").attr("value");
-				var fileContent = jQuery(res).find("input[name='value']").attr("value");
-				Utils.XHR("/"+user+"/"+repo+"/tree-save/"+nBranch+"/"+DeltaUtils.ResultXMLName ,function(res){//https://github.com/letimome/miRepo/tree-save/nuevo/resultado.xml
-				},"POST","authenticity_token="+encodeURIComponent(token)+"&filename="+DeltaUtils.ResultXMLName+"&new_filename="+"prueba.xml"+"&commit="+commit+"&value="+fileContent+"&placeholder_message=Rename "+DeltaUtils.ResultXMLName+" to base.xml");
+	    var commit;
+		Utils.XHR("/"+user+"/"+repo+"/branches",function(res){//post a new branch
+		  Utils.XHR("/"+user+"/"+repo+"/blob/"+nBranch+"/"+DeltaUtils.ResultXMLName,function(res){//https://github.com/letimome/miRepo/nuevo/result.xml  
+			var resultContent=jQuery(res).find("div[class='line']").map(function() {return jQuery(this).text();}).toArray().join("\n");
+			Utils.XHR("/"+user+"/"+repo+"/edit/"+nBranch+"/"+DeltaUtils.ResultXMLName,function(res){//https://github.com/letimome/miRepo/edit/nuevo/result.xml   
+				commit = jQuery(res).find("input[name='commit']").attr("value");
+				console.log("2. commit: "+commit);
+				console.log("content of the new base: "+resultContent);
+				//borrar el base
+				Utils.XHR("/"+user+"/"+repo+"/delete/"+nBranch+"/"+DeltaUtils.BaseXMLName ,function(res){//POST https://github.com/letimome/SimpleRobot/delete/qweqeqweqwe/base.xml, authentity
+					console.log("2. commit: "+commit);
+					Utils.XHR("/"+user+"/"+repo+"/blob/"+nBranch+"/"+DeltaUtils.BaseXMLName ,function(res){//POST https://github.com/letimome/SimpleRobot/blob/qweqeqweqwe/base.xml, _method:delete, auth, commit, placeholder: delete base.xml
+						window.location.href="/"+user+"/"+repo;//console.log("Comit value 3: "+commit);						
+					},"POST","authenticity_token="+encodeURIComponent(token)+"&_method=delete"+"&commit="+commit+"&placeholder_message=Delete "+DeltaUtils.BaseXMLName);				
+				},"POST","authenticity_token="+encodeURIComponent(token));
+				//2. el result pasa a ser el base
+				Utils.XHR("/"+user+"/"+repo+"/tree-save/"+nBranch+"/"+DeltaUtils.ResultXMLName ,function(res){//https://github.com/letimome/miRepo/tree-save/nuevo/resultado.xml			
+					window.location.href="/"+user+"/"+repo;//console.log("Comit value 3: "+commit);	
+					Utils.XHR("/"+user+"/"+repo+"/tree-save/"+nBranch+"/"+DeltaUtils.DeltaXMLName ,function(res){//https://github.com/letimome/miRepo/tree-save/nuevo/resultado.xml			
+					},"POST","authenticity_token="+encodeURIComponent(token)+"&filename="+DeltaUtils.DeltaXMLName+"&new_filename="+DeltaUtils.DeltaXMLName+"&commit="+commit+"&value="+DeltaUtils.getDeltaFileHeaderForNewBranch(user,repo,par)+"&placeholder_message=Design yout new increment");					
+				},"POST","authenticity_token="+encodeURIComponent(token)+"&filename="+DeltaUtils.BaseXMLName+"&new_filename="+DeltaUtils.BaseXMLName+"&commit="+commit+"&value="+resultContent+"&placeholder_message=Result from branch: "+par);
+				//3. borrar contenido del delta
 			},"POST","authenticity_token="+encodeURIComponent(token)); 
-		},"POST","authenticity_token="+encodeURIComponent(token)+"&branch="+par+"&name="+nBranch+"&path="); 
-		
-		
+			//visualizar el nuevo branch	
+			},"GET");
+		},"POST","authenticity_token="+encodeURIComponent(token)+"&branch="+par+"&name="+nBranch+"&path=");	
+
 };
 
 var BranchFilterEController=function(){
@@ -2353,20 +2372,9 @@ BranchFilterEController.prototype.execute=function(ev,parentBranch,newBranch){
 	//Location= https://github.com/lemome88/SimpleRobot/tree/hhhghghghghghg
 	//post parametros: authenticity_token, branch (currentBrancg), name(new branch name), path?
 	
-	/*var key=ev.keyCode || e.which;
+	var key=ev.keyCode || e.which;
 	//ALWAYS!!
 		console.log("NEW BRANCH ");
-		var user=GitHub.getUserName(); 
-		var repo=GitHub.getCurrentRepository(); 
-		
-		console.log("parent: "+parentBranch);
-		console.log("new one: "+newBranch);
-		var token=GitHub.getAuthenticityToken();
-		console.log("auth: "+token);
-		Utils.XHR("/"+user+"/"+repo+"/branches",function(res){},"POST","authenticity_token="+encodeURIComponent(token)+"&branch="+parentBranch+"&name="+newBranch+"&path="); 
-		Utils.XHR("/"+user+"/"+repo+"/"+newBranch,function(res){},"GET");	
-		
-	*/
 
 };
 
@@ -2439,6 +2447,15 @@ var InstallEController=function(){
 };
 
 InstallEController.prototype.execute=function(act){//compose files and create result
+	var docTile= document.title;// e.g. lemome88/SimpleRobot at de (de is branch)
+	//console.log("doc : "+document.title);
+	var str=docTile.split("at ");
+	//console.log("str: "+str[0]+", "+str[1]);
+	var currentBranch=str[1];
+	if(!currentBranch) currentBranch="master";
+	console.log("current branch "+currentBranch);
+	//DeltaUtils.currentBranch=currentBranch;
+
 	if(act=="add"){
 		var obj=this;
 		var install=new ActionView();
@@ -2446,13 +2463,11 @@ InstallEController.prototype.execute=function(act){//compose files and create re
 		var render=install.render();
 		GitHub.injectIntoActions(render);
 	}else if(act=="run"){
-		console.log("NewBranch Name: "+GitHub.getNewBranch());
 		console.log("Llamar al composer");
 		 var user=GitHub.getUserName(); 
 		 var repo=GitHub.getCurrentRepository();
 		 var token=GitHub.getAuthenticityToken(); 	
-		 var branch=GitHub.getCurrentBranch();	
-		 console.log("Current Branch: "+branch);
+		 var branch=currentBranch;//DeltaUtils.currentBranch;	
 		 Utils.XHR("/"+user+"/"+repo+"/blob/"+branch+"/"+DeltaUtils.BaseXMLName,function(res){		
 			 	var baseXML=jQuery(res).find("div[class='line']").map(function() {return jQuery(this).text();}).toArray().join("\n");
 			 	Utils.XHR("/"+user+"/"+repo+"/blob/"+branch+"/"+DeltaUtils.DeltaXMLName,function(res){
@@ -2526,6 +2541,7 @@ Utils.XHR=function(url,f,method,params){
 }
 
 var DeltaUtils={};
+DeltaUtils.currentBranch="master";
 DeltaUtils.BaseXMLName="base.xml";
 DeltaUtils.DeltaXMLName="delta.xml";
 DeltaUtils.ResultXMLName="result.xml";   
@@ -2533,6 +2549,13 @@ DeltaUtils.ResultXMLName="result.xml";
 DeltaUtils.createDeltaXML=function(author,repo){
  var delta='<delta id="delta_name" core="https://github.com/'+author+'/'+repo+'">\n';
  delta=delta+'</delta>';
+ return delta;
+}
+
+DeltaUtils.getDeltaFileHeaderForNewBranch=function(user,repo,parent){
+	var delta='<delta id="delta_name" core="https://github.com/'+user+'/'+repo+'/tree/'+parent+'">\n';
+ delta=delta+'</delta>';
+ console.log("in getDeltaFileHeaderForNewBranch");
  return delta;
 }
 
@@ -2554,6 +2577,7 @@ DeltaUtils.updateDelta=function(baseXML, deltaXML,diff){//Needs to call to GWT c
 	//alert("Your delta is updated!");
 	//if(newDelta==null) return deltaXML;
 	return newDelta;
+
 	
 
 }
