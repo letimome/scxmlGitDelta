@@ -2336,25 +2336,22 @@ BranchEController.prototype.execute=function(ev, newb){
 			var resultContent=jQuery(res).find("div[class='line']").map(function() {return jQuery(this).text();}).toArray().join("\n");
 			Utils.XHR("/"+user+"/"+repo+"/edit/"+nBranch+"/"+DeltaUtils.ResultXMLName,function(res){//https://github.com/letimome/miRepo/edit/nuevo/result.xml   
 				commit = jQuery(res).find("input[name='commit']").attr("value");
-				console.log("2. commit: "+commit);
 				console.log("content of the new base: "+resultContent);
-				//borrar el base
+				//1 borrar el base
 				Utils.XHR("/"+user+"/"+repo+"/delete/"+nBranch+"/"+DeltaUtils.BaseXMLName ,function(res){//POST https://github.com/letimome/SimpleRobot/delete/qweqeqweqwe/base.xml, authentity
-					console.log("2. commit: "+commit);
 					Utils.XHR("/"+user+"/"+repo+"/blob/"+nBranch+"/"+DeltaUtils.BaseXMLName ,function(res){//POST https://github.com/letimome/SimpleRobot/blob/qweqeqweqwe/base.xml, _method:delete, auth, commit, placeholder: delete base.xml
-						window.location.href="/"+user+"/"+repo;//console.log("Comit value 3: "+commit);						
+						//2 el result pasa a ser el base
+						Utils.XHR("/"+user+"/"+repo+"/tree-save/"+nBranch+"/"+DeltaUtils.ResultXMLName ,function(res){//https://github.com/letimome/miRepo/tree-save/nuevo/resultado.xml			
+						  window.location.href="/"+user+"/"+repo+"/tree/"+nBranch;//console.log("Comit value 3: "+commit);	
+						  //3 borrar conrenido del delta
+						  Utils.XHR("/"+user+"/"+repo+"/tree-save/"+nBranch+"/"+DeltaUtils.DeltaXMLName ,function(res){//https://github.com/letimome/miRepo/tree-save/nuevo/resultado.xml			
+						  },"POST","authenticity_token="+encodeURIComponent(token)+"&filename="+DeltaUtils.DeltaXMLName+"&new_filename="+DeltaUtils.DeltaXMLName+"&commit="+commit+"&value="+DeltaUtils.getDeltaFileHeaderForNewBranch(user,repo,par)+"&placeholder_message=Design yout new increment");					
+						},"POST","authenticity_token="+encodeURIComponent(token)+"&filename="+DeltaUtils.BaseXMLName+"&new_filename="+DeltaUtils.BaseXMLName+"&commit="+commit+"&value="+resultContent+"&placeholder_message=Result from branch: "+par);
 					},"POST","authenticity_token="+encodeURIComponent(token)+"&_method=delete"+"&commit="+commit+"&placeholder_message=Delete "+DeltaUtils.BaseXMLName);				
 				},"POST","authenticity_token="+encodeURIComponent(token));
-				//2. el result pasa a ser el base
-				Utils.XHR("/"+user+"/"+repo+"/tree-save/"+nBranch+"/"+DeltaUtils.ResultXMLName ,function(res){//https://github.com/letimome/miRepo/tree-save/nuevo/resultado.xml			
-					window.location.href="/"+user+"/"+repo;//console.log("Comit value 3: "+commit);	
-					Utils.XHR("/"+user+"/"+repo+"/tree-save/"+nBranch+"/"+DeltaUtils.DeltaXMLName ,function(res){//https://github.com/letimome/miRepo/tree-save/nuevo/resultado.xml			
-					},"POST","authenticity_token="+encodeURIComponent(token)+"&filename="+DeltaUtils.DeltaXMLName+"&new_filename="+DeltaUtils.DeltaXMLName+"&commit="+commit+"&value="+DeltaUtils.getDeltaFileHeaderForNewBranch(user,repo,par)+"&placeholder_message=Design yout new increment");					
-				},"POST","authenticity_token="+encodeURIComponent(token)+"&filename="+DeltaUtils.BaseXMLName+"&new_filename="+DeltaUtils.BaseXMLName+"&commit="+commit+"&value="+resultContent+"&placeholder_message=Result from branch: "+par);
-				//3. borrar contenido del delta
 			},"POST","authenticity_token="+encodeURIComponent(token)); 
-			//visualizar el nuevo branch	
 			},"GET");
+		
 		},"POST","authenticity_token="+encodeURIComponent(token)+"&branch="+par+"&name="+nBranch+"&path=");	
 
 };

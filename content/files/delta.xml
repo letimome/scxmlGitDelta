@@ -1,2 +1,30 @@
-<delta id="delta_name" core="https://github.com/lemome88/SimpleRobot/tree/master">
+<delta id="RunRobotIncrement" core="https://github.com/letimome/SimpleRobot">
+    <modifyState  id="RunRobot">
+        <addParalell  id="obstacleAndDrive">
+            <addState  id="obstacleAvoidance" initial="AvoidWait">
+                <addState id="AvoidWait" initial="yes">
+                    <addTransition event="oFront" target="AvoidFront"/>
+                    <addTransition  event="oLeft" target="AvoidLeft"/>
+                    <addTransition target="AvoidRight"/>
+                </addState>
+                <addState   id="AvoidFront">
+                    <addTransition target="AvoidWait"/>
+                </addState>
+                <addState id="AvoidLeft">
+                    <addTransition target="AvoidWait"/>
+                </addState>
+                <addState id="AvoidRight">
+                    <addTransition target="AvoidWait"/>
+                </addState>
+            </addState> 
+            <addState id="DriveRobot" initial="DriveWait">
+                <addState id="DriveWait" initial="yes">
+                    <addTransition event="clear" target="Drive"/>
+                </addState>
+                <addState id="Drive">
+                    <addTransition  event="wait" target="DriveWait"/>
+                </addState>
+            </addState>
+        </addParalell>
+    </modifyState>
 </delta>
